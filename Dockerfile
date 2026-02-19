@@ -1,3 +1,5 @@
+FROM docker:27-cli AS dockercli
+
 FROM node:20-bookworm-slim AS build
 
 WORKDIR /opt/cronicle
@@ -15,6 +17,8 @@ ENV NODE_ENV=production
 WORKDIR /opt/cronicle
 
 RUN apt-get update && apt-get install -y --no-install-recommends procps && rm -rf /var/lib/apt/lists/*
+
+COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
 
 RUN useradd --system --create-home --home-dir /opt/cronicle --shell /usr/sbin/nologin cronicle
 
