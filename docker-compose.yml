@@ -1,0 +1,40 @@
+services:
+  cronicle:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cronicle-base
+    container_name: cronicle
+    hostname: cronicle
+    user: "0:0"
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DOCKER_HOST: unix:///var/run/docker.sock
+    ports:
+      - "3012:3012"
+      - "3014:3014/udp"
+    volumes:
+      - cronicle-data:/opt/cronicle/data
+      - cronicle-logs:/opt/cronicle/logs
+      - cronicle-queue:/opt/cronicle/queue
+      - ${DOCKER_SOCKET_PATH}:/var/run/docker.sock
+
+  cronicle-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cronicle-base
+    hostname: cronicle
+    user: "0:0"
+    profiles: ["init"]
+    command: ["node", "bin/storage-cli.js", "setup"]
+    volumes:
+      - cronicle-data:/opt/cronicle/data
+      - cronicle-logs:/opt/cronicle/logs
+      - cronicle-queue:/opt/cronicle/queue
+
+volumes:
+  cronicle-data:
+  cronicle-logs:
+  cronicle-queue:
