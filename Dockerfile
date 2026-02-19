@@ -1,0 +1,29 @@
+FROM node:20-bookworm-slim AS build
+
+WORKDIR /opt/cronicle
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
+COPY . .
+RUN node bin/build.js dist
+
+FROM node:20-bookworm-slim
+
+ENV NODE_ENV=production
+
+WORKDIR /opt/cronicle
+
+RUN apt-get update && apt-get install -y --no-install-recommends procps && rm -rf /var/lib/apt/lists/*
+
+RUN useradd --system --create-home --home-dir /opt/cronicle --shell /usr/sbin/nologin cronicle
+
+COPY --from=build --chown=cronicle:cronicle /opt/cronicle /opt/cronicle
+
+RUN mkdir -p data logs queue && chown -R cronicle:cronicle /opt/cronicle
+
+EXPOSE 3012 3014/udp
+
+USER cronicle
+
+CMD ["node", "lib/main.js", "--debug", "--echo"]
